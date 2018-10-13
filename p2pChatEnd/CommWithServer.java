@@ -26,9 +26,13 @@ public class CommWithServer extends Thread{
         this.request=request;
         this.pipedOut=pipedOut;
         InetAddress address=InetAddress.getByName(serverIP);//获得IP地址
-        InetSocketAddress serverSocketA=new InetSocketAddress(address,PORT);//根据IP地址和端口创建套接字
+        //根据IP地址和端口创建套接字，端口号为服务器的端口号，以此连接到服务器
+        InetSocketAddress serverSocketA=new InetSocketAddress(address,PORT);
+        //Socket,TCP连接,此时MessageServer类中s.accept()就知道了有人连接了
         socket=new Socket();
         socket.connect(serverSocketA);
+
+        //获得服务器的输入，输出流，与服务器建立起通信
         out=new ObjectOutputStream(socket.getOutputStream());
         in=new ObjectInputStream(socket.getInputStream());
     }
@@ -57,7 +61,7 @@ public class CommWithServer extends Thread{
                     e.printStackTrace();
                 }catch (IOException e){
                     close();
-                    System.err.println("与服务器通信出现错误...");
+                    System.out.println("与服务器通信出现错误...");
                     return;
                 }
                 try {
@@ -69,11 +73,11 @@ public class CommWithServer extends Thread{
                     }
                     request=null;
                     response=null;
-                    wait();//使子线程进入同步等待状态
+                    wait();//使子线程进入同步等待状态，等待其他程序将其唤醒
                 }catch (IOException e){
-                    System.err.println("管道通信出现错误...");
+                    System.out.println("管道通信出现错误...");
                 }catch (InterruptedException e){
-                    System.err.println("线程同步出现错误...");
+                    System.out.println("线程同步出现错误...");
                 }
             }
         }

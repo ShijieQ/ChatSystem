@@ -10,7 +10,7 @@ public class P2PChatEnd extends JFrame {
     private JLabel label;
     private JTabbedPane tabbedPane;
     private Exit exit;
-    private CommWithServer commWithServer;
+    private CommWithServer commWithServer;//与服务器通信的线程
     public P2PChatEnd(){
         setTitle("P2P聊天端");
         label=new JLabel();
@@ -20,7 +20,7 @@ public class P2PChatEnd extends JFrame {
         label.setHorizontalTextPosition(SwingConstants.RIGHT);
         label.setBackground(Color.green);
 
-        commWithServer=new CommWithServer();
+        commWithServer=new CommWithServer();//创建好"与服务器通信"的线程，并作为参数，传递给其他类
         register=new Register(commWithServer);
         getOnlineP2PEnds=new GetOnlineP2PEnds(commWithServer);
         chat=new Chat(this);
@@ -35,7 +35,7 @@ public class P2PChatEnd extends JFrame {
         add(tabbedPane,BorderLayout.CENTER);
         setBounds(120,60,400,147 );
         setVisible(true);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
     public static void main(String[] args) {

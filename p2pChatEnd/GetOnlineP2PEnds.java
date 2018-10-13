@@ -76,11 +76,13 @@ public class GetOnlineP2PEnds extends JPanel implements ActionListener {
                 request=new Request(2, registerName);
                 commWithServer.setRequest(request);
                 commWithServer.setPipedOut(pipedOut);
-                commWithServer.notifyCommWithServer();
+                commWithServer.notifyCommWithServer();;
                 response=(Response)pipedIn.readObject();
-                //以下一行代码从响应中得到在线的P2P端注册名列表
+                //从响应中得到在线的P2P端注册名列表
                 Vector<String> onLineP2PEnds=response.getAllNameOfRegister();
-                list.setListData(onLineP2PEnds);//尝试将null值传递给此方法会导致未定义的行为，并且最有可能发生异常
+                //尝试将null值传递给此方法会导致未定义的行为，并且最有可能发生异常。 创建的模型直接引用给定的
+                // Vector 。调用此方法后尝试修改Vector会导致未定义的行为。
+                list.setListData(onLineP2PEnds);
                 submit.setEnabled(true);
             }
             if(e.getSource()==submit){
@@ -92,8 +94,8 @@ public class GetOnlineP2PEnds extends JPanel implements ActionListener {
                 }
                 String register[]=new String[list2.size()];
                 for(int i=0;i<list2.size();i++)
-                    register[i]=(String)list2.get(i);
-                Vector<InetSocketAddress> P2PEndAddress=new Vector<InetSocketAddress>();
+                    register[i]=(String)list2.get(i);//获得选择聊天的注册名
+                Vector<InetSocketAddress> P2PEndAddress=new Vector<>();
                 int chatP2PEnds=0;
                 for(int i=0;i<len;i++){
                     if(register[i].equals(registerName))//如果聊天对象名与当前相同，则跳过
@@ -103,7 +105,7 @@ public class GetOnlineP2PEnds extends JPanel implements ActionListener {
                     commWithServer.setPipedOut(pipedOut);
                     commWithServer.notifyCommWithServer();
                     response=(Response)pipedIn.readObject();
-                    //将从响应中得到的聊天对象地址加入到列表中
+                    //从响应中得到的聊天对象地址加入到列表中
                     P2PEndAddress.add(response.getChatP2PEndAddress());
                     chatP2PEnds++;
                 }
@@ -115,7 +117,7 @@ public class GetOnlineP2PEnds extends JPanel implements ActionListener {
                     message="已获取到你选择P2P端的地址，请单击左侧的|聊天|按钮";
                 }
                 JOptionPane.showMessageDialog(this, message,"信息提示",JOptionPane.PLAIN_MESSAGE);
-                P2PEndAddress.clear();
+                P2PEndAddress.clear();//清空地址列表
                 list.setListData(P2PEndAddress);
             }
         }catch (Exception e1){

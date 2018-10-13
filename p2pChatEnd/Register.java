@@ -15,16 +15,17 @@ import java.net.DatagramSocket;
 
 public class Register extends JPanel implements ActionListener {
     private JLabel hintLabel;
-    private JTextField registerNameField,serverIPField;
-    private JButton submint;
+    private JTextField registerNameField,serverIPField;//注册名和IP地址文本框
+    private JButton submint;//提交按钮
     private CommWithServer commWithServer;
     private Chat chat;
     private Request request;
     private Response response;
+    //使用对象流接收和发送响应和请求
     private ObjectOutputStream pipedOut;
     private ObjectInputStream pipedIn;
     private int clickNum=0;
-    private boolean isRegister=false;
+    private boolean isRegister=false;//判读是否注册
 
     public Register(CommWithServer commWithServer){
         this.commWithServer=commWithServer;
@@ -77,25 +78,30 @@ public class Register extends JPanel implements ActionListener {
         }
         try {
             if(clickNum==1){
+                //使用管道通信，让线程commWithServer可以和该类进行通信
                 PipedInputStream pipedI=new PipedInputStream();
                 PipedOutputStream pipedO=new PipedOutputStream(pipedI);
+                //序列化和反序列化
                 pipedOut=new ObjectOutputStream(pipedO);
                 pipedIn=new ObjectInputStream(pipedI);
             }
             DatagramSocket socket=new DatagramSocket();
+            //传递用于聊天的UDP套接字地址给Chat对象
             Chat.setSocket(socket);
-            int UDPPort=socket.getLocalPort();
-            request=new Request(1, registerName,UDPPort);
+            int UDPPort=socket.getLocalPort();//获得一个UDP端口号
+            request=new Request(1, registerName,UDPPort);//封装请求
             if(commWithServer!=null){
                 if(commWithServer.isAlive()){//线程已经启动，已与信息服务器连接
                     commWithServer.close();//断开与信息服务器的连接
-                    commWithServer.connect(serverIP,request,pipedOut);//连接信息服务器
+                    //连接信息服务器，pipedOut传递给commWithServer，commWithServer再将响应写到缓冲器
+                    commWithServer.connect(serverIP,request,pipedOut);
                     commWithServer.notifyCommWithServer();//将线程唤醒
                 }else{
                     commWithServer.connect(serverIP,request,pipedOut);//连接信息服务器
                     commWithServer.start();//启动线程，与信息服务器通信
                 }
             }
+            //pipedIn读取缓存区的响应
             response=(Response)pipedIn.readObject();
         }catch (Exception ex){
             JOptionPane.showMessageDialog(this, "无法连接或与服务器通信出错","警告",JOptionPane.WARNING_MESSAGE);

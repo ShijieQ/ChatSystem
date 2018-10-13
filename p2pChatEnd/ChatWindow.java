@@ -15,14 +15,13 @@ import java.util.Vector;
 
 public class ChatWindow extends JFrame implements ActionListener,Runnable {
     private  JTextArea messageArea,inputArea;
-    private JButton sendButton,quitButton;
+    private JButton sendButton,quitButton,clearButton;
     private JLabel hintMessage1,hintMessage2,statusBar;
     private String registerName;
     private DatagramSocket socket;
     private Vector<InetSocketAddress> chatP2PEndAddress;
     private P2PChatEnd p2pChatEnd;
-    private Thread chatP2PEndMonitor;
-    //聊天过程中，检测其他P2P端是否都已经退出子线程
+    private Thread chatP2PEndMonitor;//聊天过程中，检测其他P2P端是否都已经退出子线程
     private boolean monitoring;
     private String newLine;
     public ChatWindow(String registerName,DatagramSocket socket,P2PChatEnd p2pChatEnd){
@@ -31,7 +30,7 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
         this.socket=socket;
         this.p2pChatEnd=p2pChatEnd;
         monitoring=true;
-        newLine= System.getProperty("line.separator");
+        newLine= System.getProperty("line.separator");//换行符，作用与'\n'相同，这样可以保证在其他操作系统也能过执行
         hintMessage1=new JLabel("显示聊天记录");
         hintMessage2=new JLabel("编辑信息");
         messageArea=new JTextArea(4, 20);
@@ -45,6 +44,8 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
          sendButton.addActionListener(this);
          quitButton=new JButton("退出");
          quitButton.addActionListener(this);
+         clearButton=new JButton("清空");//清空当前的聊天记录
+         clearButton.addActionListener(this);
          statusBar=new JLabel("在线： "+registerName);
          statusBar.setBorder(new BevelBorder(BevelBorder.LOWERED));
          JPanel messagePanel=new JPanel();
@@ -52,9 +53,10 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
          messagePanel.add(hintMessage1,BorderLayout.NORTH);
          messagePanel.add(new JScrollPane(messageArea),BorderLayout.CENTER);
          JPanel buttonPanel=new JPanel();
-         buttonPanel.setLayout(new GridLayout(2,1));
+         buttonPanel.setLayout(new GridLayout(3,1));
          buttonPanel.add(sendButton);
          buttonPanel.add(quitButton);
+         buttonPanel.add(clearButton);
          Box box1=new Box(BoxLayout.X_AXIS);
          box1.add(new JScrollPane(inputArea));
          box1.add(buttonPanel);
@@ -73,7 +75,7 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
          setSize(300,400 );
          Exit.setChatWindow(this);
     }
-    public void setChatP2PEndAddress(Vector<InetSocketAddress> chatP2PEndAddress){
+    public void setChatP2PEndAddress(Vector<InetSocketAddress> chatP2PEndAddress){//获得聊天对象地址列表
         this.chatP2PEndAddress=chatP2PEndAddress;
     }
     public void beginMonitor(boolean monitoring){
@@ -84,7 +86,7 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
     public void setReceived(String received){
         messageArea.append(received+newLine);
     }
-    public void endChat(InetSocketAddress isa){
+    public void endChat(InetSocketAddress isa){//向聊天对象也发送一个再见
         String message=registerName+">再见！";
         messageArea.append(message+newLine);
         byte[] buf=message.getBytes();
@@ -99,12 +101,15 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
     }
     public void actionPerformed(ActionEvent e) {
         if(e.getSource()==sendButton){
-            String message=registerName+">"+inputArea.getText();
+            String message=registerName+">"+inputArea.getText().trim();
             sendMessage(message);
             inputArea.setText("");
         }
         if(e.getSource()==quitButton){
             close();
+        }
+        if(e.getSource()==clearButton){
+            messageArea.setText("");
         }
     }
     public void sendMessage(String message){
@@ -112,8 +117,9 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
         byte[] buf=message.getBytes();
         DatagramPacket packet=null;
         try {
-            for(InetSocketAddress isa:chatP2PEndAddress){
-                packet=new DatagramPacket(buf,buf.length ,isa.getAddress(),isa.getPort() );
+            for(InetSocketAddress isa:chatP2PEndAddress){//将信息发送给聊天对象地址列表中每一个
+                packet=new DatagramPacket(buf,buf.length ,isa.getAddress(),isa.getPort());
+                //UDP是无连接通信，获得IP地址和端口号即可通信
                 socket.send(packet);
             }
         }catch (IOException ee){
@@ -131,14 +137,18 @@ public class ChatWindow extends JFrame implements ActionListener,Runnable {
             int i=0;
             do{
 
-            }while (!chatP2PEndAddress.isEmpty()&&i<=30);
+            }while (!chatP2PEndAddress.isEmpty()&&++i<=30);
         }
         monitoring=false;
         chatP2PEndMonitor=null;
-        if(p2pChatEnd==null||p2pChatEnd.isVisible())
+        //如果主界面不存在或者主界面不可见就退出程序
+        if(p2pChatEnd==null||!p2pChatEnd.isVisible())
             System.exit(0);
-        else
+        else{
             setVisible(false);
+            messageArea.setText("");
+        }
+
     }
     public void run() {
         while(monitoring){
